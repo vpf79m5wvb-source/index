@@ -29,6 +29,27 @@
           <span><strong id="seenCount">0</strong> reviewed</span>
         </div>
 
+        <div class="color-filter-bar" aria-label="Card color filter">
+          <div class="color-filter-title">
+            <span>Colors</span>
+            <span id="colorFilterStatus" class="color-filter-status">All colors</span>
+          </div>
+          <div class="quick-colors">
+            <button class="quick-color active all-color" data-quick-color="" aria-pressed="true">All</button>
+            <button class="quick-color mana-white" data-quick-color="W" aria-pressed="false" aria-label="White">W</button>
+            <button class="quick-color mana-blue" data-quick-color="U" aria-pressed="false" aria-label="Blue">U</button>
+            <button class="quick-color mana-black" data-quick-color="B" aria-pressed="false" aria-label="Black">B</button>
+            <button class="quick-color mana-red" data-quick-color="R" aria-pressed="false" aria-label="Red">R</button>
+            <button class="quick-color mana-green" data-quick-color="G" aria-pressed="false" aria-label="Green">G</button>
+            <button class="quick-color mana-colorless" data-quick-color="C" aria-pressed="false" aria-label="Colorless">C</button>
+          </div>
+          <div class="quick-match" role="group" aria-label="Color matching mode">
+            <button class="match-mode active" data-color-mode="contains" aria-pressed="true">Any</button>
+            <button class="match-mode" data-color-mode="all" aria-pressed="false">All selected</button>
+            <button class="match-mode" data-color-mode="exact" aria-pressed="false">Exact</button>
+          </div>
+        </div>
+
         <div id="cardStage" class="card-stage" aria-live="polite">
           <div id="loadingState" class="state-panel">
             <div class="spinner"></div>
@@ -100,7 +121,13 @@
           <label><input type="checkbox" value="G" class="colorCheck"><span>G</span></label>
           <label><input type="checkbox" value="C" class="colorCheck"><span>C</span></label>
         </div>
-        <label class="check-row"><input id="exactColors" type="checkbox"> Match only selected colors</label>
+        <label class="field-label" for="colorMode">Color matching</label>
+        <select id="colorMode" class="field-input">
+          <option value="contains">Any selected color</option>
+          <option value="all">Contains all selected colors</option>
+          <option value="exact">Exactly selected colors</option>
+        </select>
+        <p class="filter-help">Example: R + G with “Any” shows red or green cards; “All selected” requires both; “Exact” shows cards that are exactly red-green.</p>
       </fieldset>
 
       <label class="field-label" for="typeFilter">Card type</label>
