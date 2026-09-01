@@ -1,4 +1,4 @@
-# CardSwipe MTG
+# CardSwipe MTG v4 v3
 
 A phone-first Progressive Web App for discovering Magic: The Gathering cards. Swipe right to save, left to skip, filter the pool, undo a swipe, inspect card details, and export your saved cards as a simple deck-list format.
 
@@ -71,3 +71,17 @@ Scryfall asks API clients to stay below 10 requests per second. This app deliber
 ## Notes
 
 Magic: The Gathering is a trademark of Wizards of the Coast. This fan project is not affiliated with or endorsed by Wizards of the Coast. Card data/images are retrieved from Scryfall.
+
+
+## Version 2 color filters
+- Quick color buttons on the Discover screen: All, W, U, B, R, G, C.
+- Advanced multi-color filtering under Filters.
+- Three matching modes: contains any selected color, only uses selected colors, or exact colors.
+
+
+## v3 color filtering
+The Discover screen now has an always-visible color filter. Tap W/U/B/R/G/C to toggle one or more colors. Choose Any, All selected, or Exact to control how multicolor cards are matched. Tap All to clear the color filter.
+
+
+## v4 fix
+Fixed a race condition that could leave the Discover screen stuck on ‘Loading cards…’ after changing a color while a background card fetch was still running. The service-worker cache name was also bumped so GitHub Pages clients receive the updated JavaScript.

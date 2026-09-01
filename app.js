@@ -18,7 +18,7 @@ const els = {
   filtersBtn: $('filtersBtn'), filterSheet: $('filterSheet'), closeFiltersBtn: $('closeFiltersBtn'),
   resetFiltersBtn: $('resetFiltersBtn'), applyFiltersBtn: $('applyFiltersBtn'),
   formatFilter: $('formatFilter'), typeFilter: $('typeFilter'), rarityFilter: $('rarityFilter'),
-  manaMax: $('manaMax'), priceMax: $('priceMax'), exactColors: $('exactColors'), excludeDigital: $('excludeDigital'),
+  manaMax: $('manaMax'), priceMax: $('priceMax'), colorMode: $('colorMode'), colorFilterStatus: $('colorFilterStatus'), excludeDigital: $('excludeDigital'),
   savedGrid: $('savedGrid'), savedEmpty: $('savedEmpty'), exportBtn: $('exportBtn'),
   detailsModal: $('detailsModal'), closeDetailsBtn: $('closeDetailsBtn'), detailsImage: $('detailsImage'),
   detailsName: $('detailsName'), detailsMeta: $('detailsMeta'), detailsText: $('detailsText'), detailsPrice: $('detailsPrice'),
@@ -26,7 +26,7 @@ const els = {
 };
 
 function defaultFilters() {
-  return { format: 'commander', colors: [], exactColors: false, type: '', rarity: '', manaMax: '', priceMax: '', paperOnly: true };
+  return { format: 'commander', colors: [], colorMode: 'contains', type: '', rarity: '', manaMax: '', priceMax: '', paperOnly: true };
 }
 
 function loadState() {
@@ -35,6 +35,9 @@ function loadState() {
     state.saved = Array.isArray(raw.saved) ? raw.saved : [];
     state.seenIds = new Set(Array.isArray(raw.seenIds) ? raw.seenIds : []);
     state.filters = { ...defaultFilters(), ...(raw.filters || {}) };
+    if (raw.filters && typeof raw.filters.exactColors === 'boolean' && !raw.filters.colorMode) {
+      state.filters.colorMode = raw.filters.exactColors ? 'exact' : 'all';
+    }
   } catch (e) {
     console.warn('Could not read saved state', e);
   }
@@ -72,11 +75,25 @@ function buildQuery() {
   if (f.manaMax !== '') terms.push(`mv<=${Number(f.manaMax)}`);
   if (f.priceMax !== '') terms.push(`usd<=${Number(f.priceMax)}`);
   if (f.colors.length) {
-    const colorString = f.colors.join('');
-    if (f.colors.includes('C') && f.colors.length === 1) terms.push('c=c');
-    else {
-      const nonC = colorString.replace('C','');
-      if (nonC) terms.push(`${f.exactColors ? 'c=' : 'c<='}${nonC}`);
+    const selected = f.colors;
+    const nonC = selected.filter(c => c !== 'C').join('');
+    const hasC = selected.includes('C');
+
+    if (f.colorMode === 'exact') {
+      if (hasC && !nonC) terms.push('c=c');
+      else if (nonC && !hasC) terms.push(`c=${nonC}`);
+      else if (hasC && nonC) terms.push(`(c=c OR c=${nonC})`);
+    } else if (f.colorMode === 'all') {
+      if (hasC && !nonC) terms.push('c=c');
+      else if (nonC && !hasC) terms.push(`c>=${nonC}`);
+      else if (hasC && nonC) terms.push(`(c=c OR c>=${nonC})`);
+    } else {
+      const parts = [];
+      for (const color of selected) {
+        parts.push(color === 'C' ? 'c=c' : `c>=${color}`);
+      }
+      if (parts.length === 1) terms.push(parts[0]);
+      else terms.push(`(${parts.join(' OR ')})`);
     }
   }
   return terms.join(' ');
@@ -102,7 +119,10 @@ function shuffle(items) {
 }
 
 async function loadBatch(force = false) {
-  if (state.loading || (!force && state.queue.length >= 8)) return;
+  // A forced reload (for example, changing colors) must be allowed to
+  // supersede an in-flight prefetch. Otherwise the old request is invalidated
+  // while the new request never starts, leaving the UI stuck on Loading.
+  if (!force && (state.loading || state.queue.length >= 8)) return;
   state.loading = true;
   const token = ++state.fetchToken;
   if (!state.queue.length) renderLoading();
@@ -128,7 +148,9 @@ async function loadBatch(force = false) {
   } catch (err) {
     showState('Could not load cards.', err.message, true);
   } finally {
-    state.loading = false;
+    // Only the newest request owns the loading flag. An older superseded
+    // request must not mark the app idle while the replacement is still running.
+    if (token === state.fetchToken) state.loading = false;
   }
 }
 
@@ -264,7 +286,7 @@ function syncFilterInputs() {
   const f = state.filters;
   els.formatFilter.value = f.format; els.typeFilter.value = f.type; els.rarityFilter.value = f.rarity;
   els.manaMax.value = f.manaMax; els.priceMax.value = f.priceMax;
-  els.exactColors.checked = f.exactColors; els.excludeDigital.checked = f.paperOnly;
+  els.colorMode.value = f.colorMode || 'contains'; els.excludeDigital.checked = f.paperOnly;
   document.querySelectorAll('.colorCheck').forEach(c => c.checked = f.colors.includes(c.value));
 }
 
@@ -272,7 +294,7 @@ function readFilterInputs() {
   return {
     format: els.formatFilter.value,
     colors: [...document.querySelectorAll('.colorCheck:checked')].map(c => c.value),
-    exactColors: els.exactColors.checked,
+    colorMode: els.colorMode.value,
     type: els.typeFilter.value,
     rarity: els.rarityFilter.value,
     manaMax: els.manaMax.value,
@@ -281,11 +303,69 @@ function readFilterInputs() {
   };
 }
 
+function colorName(code) {
+  return ({ W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green', C: 'Colorless' })[code] || code;
+}
+
+function syncQuickColors() {
+  const colors = state.filters.colors || [];
+  document.querySelectorAll('.quick-color').forEach(btn => {
+    const value = btn.dataset.quickColor;
+    const active = value === '' ? colors.length === 0 : colors.includes(value);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  document.querySelectorAll('.match-mode').forEach(btn => {
+    const active = btn.dataset.colorMode === (state.filters.colorMode || 'contains');
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
+  if (els.colorFilterStatus) {
+    if (!colors.length) els.colorFilterStatus.textContent = 'All colors';
+    else {
+      const names = colors.map(colorName).join(' + ');
+      const mode = state.filters.colorMode === 'exact' ? 'exact' : state.filters.colorMode === 'all' ? 'all' : 'any';
+      els.colorFilterStatus.textContent = `${names} · ${mode}`;
+    }
+  }
+}
+
+function reloadForColorChange(message) {
+  state.queue = [];
+  state.fetchToken++;
+  persist();
+  syncFilterInputs();
+  syncQuickColors();
+  loadBatch(true);
+  toast(message);
+}
+
+function applyQuickColor(color) {
+  if (!color) {
+    state.filters.colors = [];
+    reloadForColorChange('Showing all colors');
+    return;
+  }
+
+  const colors = new Set(state.filters.colors || []);
+  if (colors.has(color)) colors.delete(color);
+  else colors.add(color);
+  state.filters.colors = [...colors];
+  reloadForColorChange(state.filters.colors.length ? `Color filter: ${state.filters.colors.map(colorName).join(', ')}` : 'Showing all colors');
+}
+
+function applyColorMode(mode) {
+  state.filters.colorMode = mode;
+  reloadForColorChange(mode === 'exact' ? 'Exact color match' : mode === 'all' ? 'Require all selected colors' : 'Match any selected color');
+}
+
 function applyFilters() {
   state.filters = readFilterInputs();
   state.queue = []; state.fetchToken++; persist();
   els.filterSheet.classList.add('hidden');
-  loadBatch(true); toast('Filters applied');
+  syncQuickColors(); loadBatch(true); toast('Filters applied');
 }
 
 function exportSaved() {
@@ -332,10 +412,12 @@ function bindEvents() {
   els.resetFiltersBtn.addEventListener('click', () => { state.filters = defaultFilters(); syncFilterInputs(); });
   els.exportBtn.addEventListener('click', exportSaved);
   document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => switchView(n.dataset.view)));
+  document.querySelectorAll('.quick-color').forEach(btn => btn.addEventListener('click', () => applyQuickColor(btn.dataset.quickColor)));
+  document.querySelectorAll('.match-mode').forEach(btn => btn.addEventListener('click', () => applyColorMode(btn.dataset.colorMode)));
 }
 
 async function init() {
-  loadState(); bindEvents(); syncFilterInputs(); updateCounts(); renderSaved();
+  loadState(); bindEvents(); syncFilterInputs(); syncQuickColors(); updateCounts(); renderSaved();
   await loadBatch(true);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
