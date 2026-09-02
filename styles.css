@@ -165,3 +165,13 @@ fieldset { border:0; padding:0; margin:0; }
   color: var(--text);
   border-color: var(--accent);
 }
+
+/* v5-fixed: compact single-select card type filter */
+.type-filter-bar { margin: 10px 0 12px; }
+.type-filter-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; font-size:.85rem; }
+.type-filter-title > span:first-child { font-weight:700; }
+.type-filter-status { color:var(--muted, #9ca3af); font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.quick-types { display:flex; gap:8px; overflow-x:auto; padding:1px 1px 5px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.quick-types::-webkit-scrollbar { display:none; }
+.quick-type { flex:0 0 auto; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.055); color:inherit; border-radius:999px; padding:8px 12px; font:inherit; font-size:.78rem; }
+.quick-type.active { border-color:rgba(255,255,255,.55); background:rgba(255,255,255,.16); }

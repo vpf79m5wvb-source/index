@@ -1,8 +1,8 @@
-const CACHE = 'cardswipe-shell-v4';
-const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'cardswipe-shell-v6';
+const CORE = ['./', './index.html', './styles.css', './app.js'];
 self.addEventListener('install', event => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)));
 });
 self.addEventListener('activate', event => {
   event.waitUntil(Promise.all([
@@ -13,11 +13,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.hostname === 'api.scryfall.com' || url.hostname.endsWith('scryfall.io')) return;
-  event.respondWith(
-    fetch(event.request).then(response => {
+  event.respondWith(fetch(event.request).then(response => {
+    if (response && response.ok) {
       const clone = response.clone();
-      caches.open(CACHE).then(cache => cache.put(event.request, clone));
-      return response;
-    }).catch(() => caches.match(event.request))
-  );
+      caches.open(CACHE).then(cache => cache.put(event.request, clone)).catch(() => {});
+    }
+    return response;
+  }).catch(() => caches.match(event.request)));
 });

@@ -18,7 +18,7 @@ const els = {
   filtersBtn: $('filtersBtn'), filterSheet: $('filterSheet'), closeFiltersBtn: $('closeFiltersBtn'),
   resetFiltersBtn: $('resetFiltersBtn'), applyFiltersBtn: $('applyFiltersBtn'),
   formatFilter: $('formatFilter'), typeFilter: $('typeFilter'), rarityFilter: $('rarityFilter'),
-  manaMax: $('manaMax'), priceMax: $('priceMax'), colorMode: $('colorMode'), colorFilterStatus: $('colorFilterStatus'), excludeDigital: $('excludeDigital'),
+  manaMax: $('manaMax'), priceMax: $('priceMax'), colorMode: $('colorMode'), colorFilterStatus: $('colorFilterStatus'), typeFilterStatus: $('typeFilterStatus'), excludeDigital: $('excludeDigital'),
   savedGrid: $('savedGrid'), savedEmpty: $('savedEmpty'), exportBtn: $('exportBtn'),
   detailsModal: $('detailsModal'), closeDetailsBtn: $('closeDetailsBtn'), detailsImage: $('detailsImage'),
   detailsName: $('detailsName'), detailsMeta: $('detailsMeta'), detailsText: $('detailsText'), detailsPrice: $('detailsPrice'),
@@ -332,6 +332,32 @@ function syncQuickColors() {
   }
 }
 
+function typeName(type) {
+  if (!type) return 'Any type';
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function syncQuickTypes() {
+  const type = state.filters.type || '';
+  document.querySelectorAll('.quick-type').forEach(btn => {
+    const active = btn.dataset.quickType === type;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  if (els.typeFilterStatus) els.typeFilterStatus.textContent = typeName(type);
+}
+
+function applyQuickType(type) {
+  state.filters.type = type || '';
+  state.queue = [];
+  state.fetchToken++;
+  persist();
+  syncFilterInputs();
+  syncQuickTypes();
+  loadBatch(true);
+  toast(type ? `${typeName(type)} cards` : 'Showing any card type');
+}
+
 function reloadForColorChange(message) {
   state.queue = [];
   state.fetchToken++;
@@ -365,7 +391,7 @@ function applyFilters() {
   state.filters = readFilterInputs();
   state.queue = []; state.fetchToken++; persist();
   els.filterSheet.classList.add('hidden');
-  syncQuickColors(); loadBatch(true); toast('Filters applied');
+  syncQuickColors(); syncQuickTypes(); loadBatch(true); toast('Filters applied');
 }
 
 function exportSaved() {
@@ -414,10 +440,11 @@ function bindEvents() {
   document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => switchView(n.dataset.view)));
   document.querySelectorAll('.quick-color').forEach(btn => btn.addEventListener('click', () => applyQuickColor(btn.dataset.quickColor)));
   document.querySelectorAll('.match-mode').forEach(btn => btn.addEventListener('click', () => applyColorMode(btn.dataset.colorMode)));
+  document.querySelectorAll('.quick-type').forEach(btn => btn.addEventListener('click', () => applyQuickType(btn.dataset.quickType)));
 }
 
 async function init() {
-  loadState(); bindEvents(); syncFilterInputs(); syncQuickColors(); updateCounts(); renderSaved();
+  loadState(); bindEvents(); syncFilterInputs(); syncQuickColors(); syncQuickTypes(); updateCounts(); renderSaved();
   await loadBatch(true);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

@@ -50,6 +50,24 @@
           </div>
         </div>
 
+        <div class="type-filter-bar" aria-label="Card type filter">
+          <div class="type-filter-title">
+            <span>Card type</span>
+            <span id="typeFilterStatus" class="type-filter-status">Any type</span>
+          </div>
+          <div class="quick-types">
+            <button class="quick-type active" data-quick-type="" aria-pressed="true">Any</button>
+            <button class="quick-type" data-quick-type="creature" aria-pressed="false">Creature</button>
+            <button class="quick-type" data-quick-type="instant" aria-pressed="false">Instant</button>
+            <button class="quick-type" data-quick-type="sorcery" aria-pressed="false">Sorcery</button>
+            <button class="quick-type" data-quick-type="artifact" aria-pressed="false">Artifact</button>
+            <button class="quick-type" data-quick-type="enchantment" aria-pressed="false">Enchantment</button>
+            <button class="quick-type" data-quick-type="planeswalker" aria-pressed="false">Planeswalker</button>
+            <button class="quick-type" data-quick-type="land" aria-pressed="false">Land</button>
+            <button class="quick-type" data-quick-type="battle" aria-pressed="false">Battle</button>
+          </div>
+        </div>
+
         <div id="cardStage" class="card-stage" aria-live="polite">
           <div id="loadingState" class="state-panel">
             <div class="spinner"></div>
