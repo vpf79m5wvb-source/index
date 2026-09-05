@@ -17,8 +17,8 @@ const els = {
   undoBtn: $('undoBtn'), skipBtn: $('skipBtn'), saveBtn: $('saveBtn'), detailsBtn: $('detailsBtn'),
   filtersBtn: $('filtersBtn'), filterSheet: $('filterSheet'), closeFiltersBtn: $('closeFiltersBtn'),
   resetFiltersBtn: $('resetFiltersBtn'), applyFiltersBtn: $('applyFiltersBtn'),
-  formatFilter: $('formatFilter'), typeFilter: $('typeFilter'), rarityFilter: $('rarityFilter'),
-  manaMax: $('manaMax'), priceMax: $('priceMax'), colorMode: $('colorMode'), colorFilterStatus: $('colorFilterStatus'), typeFilterStatus: $('typeFilterStatus'), excludeDigital: $('excludeDigital'),
+  formatFilter: $('formatFilter'), typeFilter: $('typeFilter'), subtypeFilter: $('subtypeFilter'), rarityFilter: $('rarityFilter'),
+  manaMax: $('manaMax'), priceMax: $('priceMax'), colorMode: $('colorMode'), colorFilterStatus: $('colorFilterStatus'), typeFilterStatus: $('typeFilterStatus'), subtypeFilterStatus: $('subtypeFilterStatus'), excludeDigital: $('excludeDigital'),
   savedGrid: $('savedGrid'), savedEmpty: $('savedEmpty'), exportBtn: $('exportBtn'),
   detailsModal: $('detailsModal'), closeDetailsBtn: $('closeDetailsBtn'), detailsImage: $('detailsImage'),
   detailsName: $('detailsName'), detailsMeta: $('detailsMeta'), detailsText: $('detailsText'), detailsPrice: $('detailsPrice'),
@@ -26,7 +26,7 @@ const els = {
 };
 
 function defaultFilters() {
-  return { format: 'commander', colors: [], colorMode: 'contains', type: '', rarity: '', manaMax: '', priceMax: '', paperOnly: true };
+  return { format: 'commander', colors: [], colorMode: 'contains', type: '', subtype: '', rarity: '', manaMax: '', priceMax: '', paperOnly: true };
 }
 
 function loadState() {
@@ -71,6 +71,10 @@ function buildQuery() {
   if (f.paperOnly) terms.push('game:paper');
   if (f.format) terms.push(`legal:${f.format}`);
   if (f.type) terms.push(`t:${f.type}`);
+  if (f.subtype) {
+    const subtype = String(f.subtype).replace(/"/g, '').trim();
+    if (subtype) terms.push(`t:"${subtype}"`);
+  }
   if (f.rarity) terms.push(`r:${f.rarity}`);
   if (f.manaMax !== '') terms.push(`mv<=${Number(f.manaMax)}`);
   if (f.priceMax !== '') terms.push(`usd<=${Number(f.priceMax)}`);
@@ -284,7 +288,7 @@ function showDetails(card = currentCard()) {
 
 function syncFilterInputs() {
   const f = state.filters;
-  els.formatFilter.value = f.format; els.typeFilter.value = f.type; els.rarityFilter.value = f.rarity;
+  els.formatFilter.value = f.format; els.typeFilter.value = f.type; els.subtypeFilter.value = f.subtype || ''; els.rarityFilter.value = f.rarity;
   els.manaMax.value = f.manaMax; els.priceMax.value = f.priceMax;
   els.colorMode.value = f.colorMode || 'contains'; els.excludeDigital.checked = f.paperOnly;
   document.querySelectorAll('.colorCheck').forEach(c => c.checked = f.colors.includes(c.value));
@@ -296,6 +300,7 @@ function readFilterInputs() {
     colors: [...document.querySelectorAll('.colorCheck:checked')].map(c => c.value),
     colorMode: els.colorMode.value,
     type: els.typeFilter.value,
+    subtype: els.subtypeFilter.value.trim(),
     rarity: els.rarityFilter.value,
     manaMax: els.manaMax.value,
     priceMax: els.priceMax.value,
@@ -347,6 +352,31 @@ function syncQuickTypes() {
   if (els.typeFilterStatus) els.typeFilterStatus.textContent = typeName(type);
 }
 
+function subtypeName(subtype) {
+  return subtype ? subtype : 'Any subtype';
+}
+
+function syncQuickSubtypes() {
+  const subtype = state.filters.subtype || '';
+  document.querySelectorAll('.quick-subtype').forEach(btn => {
+    const active = btn.dataset.quickSubtype.toLowerCase() === subtype.toLowerCase();
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  if (els.subtypeFilterStatus) els.subtypeFilterStatus.textContent = subtypeName(subtype);
+}
+
+function applyQuickSubtype(subtype) {
+  state.filters.subtype = subtype || '';
+  state.queue = [];
+  state.fetchToken++;
+  persist();
+  syncFilterInputs();
+  syncQuickSubtypes();
+  loadBatch(true);
+  toast(subtype ? `${subtype} subtype` : 'Showing any subtype');
+}
+
 function applyQuickType(type) {
   state.filters.type = type || '';
   state.queue = [];
@@ -391,7 +421,7 @@ function applyFilters() {
   state.filters = readFilterInputs();
   state.queue = []; state.fetchToken++; persist();
   els.filterSheet.classList.add('hidden');
-  syncQuickColors(); syncQuickTypes(); loadBatch(true); toast('Filters applied');
+  syncQuickColors(); syncQuickTypes(); syncQuickSubtypes(); loadBatch(true); toast('Filters applied');
 }
 
 function exportSaved() {
@@ -441,10 +471,11 @@ function bindEvents() {
   document.querySelectorAll('.quick-color').forEach(btn => btn.addEventListener('click', () => applyQuickColor(btn.dataset.quickColor)));
   document.querySelectorAll('.match-mode').forEach(btn => btn.addEventListener('click', () => applyColorMode(btn.dataset.colorMode)));
   document.querySelectorAll('.quick-type').forEach(btn => btn.addEventListener('click', () => applyQuickType(btn.dataset.quickType)));
+  document.querySelectorAll('.quick-subtype').forEach(btn => btn.addEventListener('click', () => applyQuickSubtype(btn.dataset.quickSubtype)));
 }
 
 async function init() {
-  loadState(); bindEvents(); syncFilterInputs(); syncQuickColors(); syncQuickTypes(); updateCounts(); renderSaved();
+  loadState(); bindEvents(); syncFilterInputs(); syncQuickColors(); syncQuickTypes(); syncQuickSubtypes(); updateCounts(); renderSaved();
   await loadBatch(true);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

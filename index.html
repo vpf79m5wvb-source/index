@@ -68,6 +68,26 @@
           </div>
         </div>
 
+        <div class="subtype-filter-bar" aria-label="Card subtype filter">
+          <div class="type-filter-title">
+            <span>Subtype</span>
+            <span id="subtypeFilterStatus" class="type-filter-status">Any subtype</span>
+          </div>
+          <div class="quick-subtypes">
+            <button class="quick-subtype active" data-quick-subtype="" aria-pressed="true">Any</button>
+            <button class="quick-subtype" data-quick-subtype="Elf" aria-pressed="false">Elf</button>
+            <button class="quick-subtype" data-quick-subtype="Goblin" aria-pressed="false">Goblin</button>
+            <button class="quick-subtype" data-quick-subtype="Dragon" aria-pressed="false">Dragon</button>
+            <button class="quick-subtype" data-quick-subtype="Zombie" aria-pressed="false">Zombie</button>
+            <button class="quick-subtype" data-quick-subtype="Vampire" aria-pressed="false">Vampire</button>
+            <button class="quick-subtype" data-quick-subtype="Wizard" aria-pressed="false">Wizard</button>
+            <button class="quick-subtype" data-quick-subtype="Human" aria-pressed="false">Human</button>
+            <button class="quick-subtype" data-quick-subtype="Equipment" aria-pressed="false">Equipment</button>
+            <button class="quick-subtype" data-quick-subtype="Vehicle" aria-pressed="false">Vehicle</button>
+            <button class="quick-subtype" data-quick-subtype="Aura" aria-pressed="false">Aura</button>
+          </div>
+        </div>
+
         <div id="cardStage" class="card-stage" aria-live="polite">
           <div id="loadingState" class="state-panel">
             <div class="spinner"></div>
@@ -159,6 +179,10 @@
         <option value="planeswalker">Planeswalker</option>
         <option value="land">Land</option>
       </select>
+
+      <label class="field-label" for="subtypeFilter">Subtype</label>
+      <input id="subtypeFilter" class="field-input" type="text" maxlength="40" placeholder="Any subtype (e.g. Elf, Equipment, Time Lord)" autocomplete="off" />
+      <p class="filter-help">Enter any subtype from a card's type line. It combines with the Card type filter above.</p>
 
       <label class="field-label" for="rarityFilter">Rarity</label>
       <select id="rarityFilter" class="field-input">

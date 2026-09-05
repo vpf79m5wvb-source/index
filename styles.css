@@ -175,3 +175,9 @@ fieldset { border:0; padding:0; margin:0; }
 .quick-types::-webkit-scrollbar { display:none; }
 .quick-type { flex:0 0 auto; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.055); color:inherit; border-radius:999px; padding:8px 12px; font:inherit; font-size:.78rem; }
 .quick-type.active { border-color:rgba(255,255,255,.55); background:rgba(255,255,255,.16); }
+
+.subtype-filter-bar { margin: 0 0 12px; }
+.quick-subtypes { display:flex; gap:8px; overflow-x:auto; padding:1px 1px 5px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.quick-subtypes::-webkit-scrollbar { display:none; }
+.quick-subtype { flex:0 0 auto; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.055); color:inherit; border-radius:999px; padding:8px 12px; font:inherit; font-size:.78rem; }
+.quick-subtype.active { border-color:rgba(255,255,255,.55); background:rgba(255,255,255,.16); }
